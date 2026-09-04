@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 const smtpHost =  "smtp.gmail.com";
 const smtpUser =  process.env.EMAIL_USER;
 const smtpPass =  process.env.EMAIL_PASS;
-const emailFrom = process.env.EMAIL_FROM || dashbite ;
+const emailFrom = process.env.EMAIL_FROM ;
 const smtpPort = 465;
 const requiredSettings = [
   ["SMTP_USER or EMAIL_USER", smtpUser],

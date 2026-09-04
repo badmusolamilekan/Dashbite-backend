@@ -4,8 +4,7 @@ import ensureAdminUser from './services/ensureAdminUser.js';
 import seedDemoData from './services/seedDemoData.js';
 import app from './app.js';
 
-// This is the startup file. It connects to MongoDB, creates the admin user,
-// loads demo data if needed, and then starts the API server.
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {

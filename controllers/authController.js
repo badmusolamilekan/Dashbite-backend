@@ -94,14 +94,18 @@ export const registerUser = asyncHandler(async (req, res) => {
   });
 
   // Send email in background (non-blocking)
+  console.log(`[EMAIL] Starting to send OTP to ${user.email}...`);
+  console.log(`[EMAIL] Using config: USER=${process.env.EMAIL_USER}, FROM=${process.env.EMAIL_FROM}`);
+  
   sendEmail({
     to: user.email,
     subject: 'Your Dash verification code',
     html: verificationEmail({ heading: 'Welcome', name: user.name, message: 'Use this code to finish setting up your account.', otp: verificationOtp }),
-  }).then(() => {
-    console.log(`[EMAIL] OTP sent successfully to ${user.email}`);
+  }).then((result) => {
+    console.log(`[EMAIL] OTP sent successfully to ${user.email}, messageId: ${result.messageId}`);
   }).catch((err) => {
-    console.warn(`[EMAIL] Failed to send OTP to ${user.email}: ${err.message}`);
+    console.error(`[EMAIL] Failed to send OTP to ${user.email}: ${err.message}`);
+    console.error(`[EMAIL] Error stack: ${err.stack}`);
   });
 });
 
@@ -152,14 +156,17 @@ export const resendOtp = asyncHandler(async (req, res) => {
   });
 
   // Send email in background (non-blocking)
+  console.log(`[EMAIL] Starting to resend OTP to ${user.email}...`);
+  
   sendEmail({
     to: user.email,
     subject: 'Your new Dash verification code',
     html: verificationEmail({ heading: 'Your new code', message: 'Enter this code in Dash to verify your email.', otp }),
-  }).then(() => {
-    console.log(`[EMAIL] Resent OTP successfully to ${user.email}`);
+  }).then((result) => {
+    console.log(`[EMAIL] Resent OTP successfully to ${user.email}, messageId: ${result.messageId}`);
   }).catch((err) => {
-    console.warn(`[EMAIL] Failed to resend OTP to ${user.email}: ${err.message}`);
+    console.error(`[EMAIL] Failed to resend OTP to ${user.email}: ${err.message}`);
+    console.error(`[EMAIL] Error stack: ${err.stack}`);
   });
 });
 

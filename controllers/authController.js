@@ -91,7 +91,6 @@ export const registerUser = asyncHandler(async (req, res) => {
     verificationRequired: true,
     email: user.email,
     message: 'Account created! Check your email for verification code.',
-    devOtp: verificationOtp,
   });
 
   // Send email in background (non-blocking)
@@ -150,7 +149,6 @@ export const resendOtp = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: 'A new verification code has been sent.',
-    devOtp: otp,
   });
 
   // Send email in background (non-blocking)

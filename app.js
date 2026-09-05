@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
 import authRoutes from './routes/authRoutes.js';
@@ -13,6 +14,15 @@ import adminRoutes from './routes/adminRoutes.js';
 import { checkoutRouter, webhookRouter } from './routes/stripeRoutes.js';
 
 const app = express();
+
+// Trust proxy (required for Render/hosting behind reverse proxy)
+app.set("trust proxy", 1);
+
+// Global rate limiter
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+}));
 const allowedOrigins = new Set([
   process.env.CLIENT_URL,
   'https://dashbite-frontend.vercel.app',

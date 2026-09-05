@@ -87,14 +87,17 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   let emailSent = false;
   try {
+    console.log(`[EMAIL] Attempting to send OTP to ${user.email}...`);
+    const emailStart = Date.now();
     await sendEmail({
       to: user.email,
       subject: 'Your Dash verification code',
       html: verificationEmail({ heading: 'Welcome', name: user.name, message: 'Use this code to finish setting up your account.', otp: verificationOtp }),
     });
     emailSent = true;
+    console.log(`[EMAIL] Email sent successfully in ${Date.now() - emailStart}ms`);
   } catch (err) {
-    console.warn(`Failed to send verification email to ${user.email}: ${err.message}`);
+    console.warn(`[EMAIL] Failed to send verification email to ${user.email}: ${err.message}`);
   }
 
   res.status(201).json({
@@ -102,7 +105,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     verificationRequired: true,
     email: user.email,
     message: emailSent ? 'We sent a verification code to your email' : 'Account created. Email not configured - use the code below to verify.',
-    ...(process.env.NODE_ENV !== 'production' && !emailSent && { devOtp: verificationOtp }),
+    ...(!emailSent && { devOtp: verificationOtp }),
   });
 });
 

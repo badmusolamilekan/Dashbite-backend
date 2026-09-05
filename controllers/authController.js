@@ -85,23 +85,24 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   await createRoleProfile(user, role, vendorProfile, deliveryProfile);
 
+  let emailSent = false;
   try {
     await sendEmail({
       to: user.email,
       subject: 'Your Dash verification code',
       html: verificationEmail({ heading: 'Welcome', name: user.name, message: 'Use this code to finish setting up your account.', otp: verificationOtp }),
     });
+    emailSent = true;
   } catch (err) {
-    await User.findByIdAndDelete(user._id);
-    res.status(500);
-    throw new Error('We could not send your verification email. Check the SMTP settings and try again.');
+    console.warn(`Failed to send verification email to ${user.email}: ${err.message}`);
   }
 
   res.status(201).json({
     success: true,
     verificationRequired: true,
     email: user.email,
-    message: 'We sent a verification code to your email',
+    message: emailSent ? 'We sent a verification code to your email' : 'Account created. Email not configured - use the code below to verify.',
+    ...(process.env.NODE_ENV !== 'production' && !emailSent && { devOtp: verificationOtp }),
   });
 });
 
@@ -140,22 +141,27 @@ export const resendOtp = asyncHandler(async (req, res) => {
   }
 
   const otp = crypto.randomInt(100000, 1000000).toString();
+  let emailSent = false;
   try {
     await sendEmail({
       to: user.email,
       subject: 'Your new Dash verification code',
       html: verificationEmail({ heading: 'Your new code', message: 'Enter this code in Dash to verify your email.', otp }),
     });
+    emailSent = true;
   } catch (err) {
-    res.status(500);
-    throw new Error('We could not send your verification email. Check the SMTP settings and try again.');
+    console.warn(`Failed to send verification email to ${user.email}: ${err.message}`);
   }
 
   user.verificationOtp = otp;
   user.verificationOtpExpires = Date.now() + 10 * 60 * 1000;
   await user.save({ validateBeforeSave: false });
 
-  res.json({ success: true, message: 'A new verification code has been sent' });
+  res.json({
+    success: true,
+    message: emailSent ? 'A new verification code has been sent' : 'Email not configured - use the code below.',
+    ...(process.env.NODE_ENV !== 'production' && !emailSent && { devOtp: otp }),
+  });
 });
 
 export const loginUser = asyncHandler(async (req, res) => {

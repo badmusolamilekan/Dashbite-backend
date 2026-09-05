@@ -25,6 +25,9 @@ const transporter = nodemailer.createTransport({
     user: smtpUser,
     pass: smtpPass,
   },
+  connectionTimeout: 5000,
+  greetingTimeout: 5000,
+  socketTimeout: 5000,
 });
 
 const sendEmail = async ({ to, subject, html }) => {

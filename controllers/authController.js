@@ -85,27 +85,24 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   await createRoleProfile(user, role, vendorProfile, deliveryProfile);
 
-  let emailSent = false;
-  try {
-    console.log(`[EMAIL] Attempting to send OTP to ${user.email}...`);
-    const emailStart = Date.now();
-    await sendEmail({
-      to: user.email,
-      subject: 'Your Dash verification code',
-      html: verificationEmail({ heading: 'Welcome', name: user.name, message: 'Use this code to finish setting up your account.', otp: verificationOtp }),
-    });
-    emailSent = true;
-    console.log(`[EMAIL] Email sent successfully in ${Date.now() - emailStart}ms`);
-  } catch (err) {
-    console.warn(`[EMAIL] Failed to send verification email to ${user.email}: ${err.message}`);
-  }
-
+  // Send response immediately - don't wait for email
   res.status(201).json({
     success: true,
     verificationRequired: true,
     email: user.email,
-    message: emailSent ? 'We sent a verification code to your email' : 'Account created. Email not configured - use the code below to verify.',
-    ...(!emailSent && { devOtp: verificationOtp }),
+    message: 'Account created! Check your email for verification code.',
+    devOtp: verificationOtp,
+  });
+
+  // Send email in background (non-blocking)
+  sendEmail({
+    to: user.email,
+    subject: 'Your Dash verification code',
+    html: verificationEmail({ heading: 'Welcome', name: user.name, message: 'Use this code to finish setting up your account.', otp: verificationOtp }),
+  }).then(() => {
+    console.log(`[EMAIL] OTP sent successfully to ${user.email}`);
+  }).catch((err) => {
+    console.warn(`[EMAIL] Failed to send OTP to ${user.email}: ${err.message}`);
   });
 });
 
@@ -144,26 +141,27 @@ export const resendOtp = asyncHandler(async (req, res) => {
   }
 
   const otp = crypto.randomInt(100000, 1000000).toString();
-  let emailSent = false;
-  try {
-    await sendEmail({
-      to: user.email,
-      subject: 'Your new Dash verification code',
-      html: verificationEmail({ heading: 'Your new code', message: 'Enter this code in Dash to verify your email.', otp }),
-    });
-    emailSent = true;
-  } catch (err) {
-    console.warn(`Failed to send verification email to ${user.email}: ${err.message}`);
-  }
 
   user.verificationOtp = otp;
   user.verificationOtpExpires = Date.now() + 10 * 60 * 1000;
   await user.save({ validateBeforeSave: false });
 
+  // Send response immediately - don't wait for email
   res.json({
     success: true,
-    message: emailSent ? 'A new verification code has been sent' : 'Email not configured - use the code below.',
-    ...(process.env.NODE_ENV !== 'production' && !emailSent && { devOtp: otp }),
+    message: 'A new verification code has been sent.',
+    devOtp: otp,
+  });
+
+  // Send email in background (non-blocking)
+  sendEmail({
+    to: user.email,
+    subject: 'Your new Dash verification code',
+    html: verificationEmail({ heading: 'Your new code', message: 'Enter this code in Dash to verify your email.', otp }),
+  }).then(() => {
+    console.log(`[EMAIL] Resent OTP successfully to ${user.email}`);
+  }).catch((err) => {
+    console.warn(`[EMAIL] Failed to resend OTP to ${user.email}: ${err.message}`);
   });
 });
 
